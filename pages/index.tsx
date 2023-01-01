@@ -1,13 +1,11 @@
 // @ts-expect-error tsnejs is not typed
 import { tSNE } from "@jwalsh/tsnejs/lib";
-import { Chart } from "chart.js/auto";
 import { parse } from "csv-parse";
 import fs from "fs/promises";
+import dynamic from "next/dynamic";
 import Head from "next/head";
-import { useEffect, useRef } from "react";
 
 export async function getStaticProps(context) {
-  // const csv = await fs.readFile("./public/slim.csv", "utf8");
   const csv = await fs.readFile("./public/helpdata_help_embedding.csv", "utf8");
   const records = await new Promise((resolve, reject) => {
     parse(csv, { trim: true, columns: true }, (err, records) => {
@@ -47,45 +45,15 @@ export async function getStaticProps(context) {
   };
 }
 
+const Scatter = dynamic(
+  () => import("../components/scatter").then((mod) => mod.Scatter),
+  {
+    ssr: false,
+    loading: () => <>Loading...</>,
+  }
+);
+
 export default function Home(props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<Chart>();
-  useEffect(() => {
-    if (!canvasRef.current || chartRef.current) {
-      return;
-    }
-
-    const chart = new Chart(canvasRef.current, {
-      type: "scatter",
-      data: {
-        datasets: [
-          {
-            data: props.vectors.map(([x, y]) => ({ x, y })),
-          },
-        ],
-      },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true,
-          },
-        },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                const label = props.labels[context.dataIndex];
-                console.log(context);
-                return label;
-              },
-            },
-          },
-        },
-      },
-    });
-    chartRef.current = chart;
-  });
-
   return (
     <>
       <Head>
@@ -96,7 +64,10 @@ export default function Home(props) {
       </Head>
       <main>
         <h1>t-SNE</h1>
-        <canvas ref={canvasRef}></canvas>
+        <Scatter
+          data={props.vectors.map(([x, y]) => ({ x, y }))}
+          labels={props.labels}
+        />
       </main>
     </>
   );
