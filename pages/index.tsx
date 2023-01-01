@@ -42,6 +42,7 @@ export async function getStaticProps(context) {
   return {
     props: {
       vectors,
+      labels: records.map((record) => record.title),
     },
   };
 }
@@ -54,16 +55,12 @@ export default function Home(props) {
       return;
     }
 
-    console.log("vectors", props.vectors);
-
     const chart = new Chart(canvasRef.current, {
       type: "scatter",
       data: {
-        // labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
         datasets: [
           {
-            label: "散布図",
-            data: props.vectors.map((arr) => ({ x: arr[0], y: arr[1] })),
+            data: props.vectors.map(([x, y]) => ({ x, y })),
           },
         ],
       },
@@ -71,6 +68,17 @@ export default function Home(props) {
         scales: {
           y: {
             beginAtZero: true,
+          },
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const label = props.labels[context.dataIndex];
+                console.log(context);
+                return label;
+              },
+            },
           },
         },
       },
